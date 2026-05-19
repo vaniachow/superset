@@ -1,0 +1,150 @@
+You are working on the Apache Superset repository ($repo).
+
+## Context
+GitHub issue tracking this work: $issue_url
+
+## Task: Upgrade a Python dependency to fix a security vulnerability
+
+**Package**: `$package_name`
+**Installed version**: `$installed_version`
+**Target minimum version**: `$fixed_version`
+**CVEs being fixed**: $cve_ids
+**Severity**: $max_severity
+**Summary**: $description
+
+---
+
+## Exact steps to follow
+
+### Step 1 — Clone and check out master
+
+```bash
+git clone https://github.com/$repo.git superset
+cd superset
+git checkout master
+```
+
+### Step 2 — Update `pyproject.toml`
+
+Open `pyproject.toml` and find the line for `$package_name` in the
+`[project] dependencies` array. Update its lower bound to `>=$fixed_version`.
+
+Rules:
+- Keep any existing upper-bound cap (e.g. `<3.0.0`) — only change the lower bound.
+- If the package appears only in an optional dependency group (e.g. `[project.optional-dependencies]`),
+  update it there too.
+- If `$package_name` does not appear in `pyproject.toml` at all, skip this step.
+
+Example before:  `"$package_name>=2.0.0,<3.0.0"`
+Example after:   `"$package_name>=$fixed_version,<3.0.0"`
+
+### Step 3 — Update `requirements/base.in`
+
+This file controls the security-pinned lower bounds. It uses this exact comment format:
+
+```
+# Security: CVE-XXXX-XXXXX (SEVERITY) - short description
+packagename>=version,<next-major
+```
+
+Open `requirements/base.in` and do ONE of the following:
+
+**If `$package_name` is already in `requirements/base.in`:**
+  - Update its lower bound to `>=$fixed_version`.
+  - Update the `# Security:` comment above it to reference: `$cve_ids ($max_severity) - $description`
+  - Keep the upper-bound cap unchanged.
+
+**If `$package_name` is NOT in `requirements/base.in`:**
+  - Find the existing security pins block (lines after the ASF license header that start with `# Security:`).
+  - Add a new entry using this EXACT format (two lines):
+    ```
+    # Security: $cve_ids ($max_severity) - $description
+    $package_name>=$fixed_version
+    ```
+  - Do NOT add an upper-bound if you don't know the next major version — pip-compile will resolve it.
+
+Do NOT remove or reorder any existing lines. Do NOT modify unrelated entries.
+
+### Step 4 — Recompile pinned requirements
+
+Run the Docker-wrapped compile script (preferred):
+```bash
+./scripts/uv-pip-compile.sh
+```
+
+If Docker is not available in your environment, run the equivalent directly:
+```bash
+pip install uv
+uv pip compile pyproject.toml requirements/base.in -o requirements/base.txt
+grep --invert-match "./superset-core" requirements/base.txt > requirements/base-constraint.txt
+uv pip compile requirements/development.in -c requirements/base-constraint.txt -o requirements/development.txt
+rm requirements/base-constraint.txt
+uv pip compile requirements/translations.in -o requirements/translations.txt
+```
+
+After this step the following files will have changed:
+- `requirements/base.txt`
+- `requirements/development.txt`
+
+### Step 5 — Verify the install resolves
+
+```bash
+pip install uv
+uv pip install --system -r requirements/base.txt --dry-run 2>&1 | tail -5
+```
+
+If this fails with a conflict, check whether the upper bound in `pyproject.toml` needs
+to be widened (e.g. from `<2.0.0` to `<3.0.0`). Update accordingly and recompile.
+
+### Step 6 — Run the unit tests
+
+```bash
+pip install -e ".[dev]" --quiet
+pytest tests/unit_tests/ -x -q --timeout=120 2>&1 | tail -30
+```
+
+If tests fail due to a genuine breakage from the upgrade, try to fix the breakage.
+If tests fail due to unrelated flakiness (e.g. network, timing), note it in the PR
+description and proceed.
+
+### Step 7 — Commit and push
+
+```bash
+git config user.email "cve-bot@example.com"
+git config user.name "CVE Remediation Bot"
+git checkout -b fix/cve-$package_name-$fixed_version
+git add pyproject.toml requirements/base.in requirements/base.txt requirements/development.txt requirements/translations.txt
+git commit -m "fix(deps): upgrade $package_name to $fixed_version to fix $cve_ids"
+git push -u origin fix/cve-$package_name-$fixed_version
+```
+
+### Step 8 — Open a pull request
+
+Create a PR with:
+- **Title**: `fix(deps): upgrade $package_name to $fixed_version to fix $cve_ids`
+- **Body**:
+  ```
+  ## Summary
+
+  Upgrades `$package_name` from `$installed_version` to `>=$fixed_version` to address:
+
+  - $cve_ids ($max_severity): $description
+
+  ## Changes
+
+  - Updated lower bound in `pyproject.toml`
+  - Added/updated security pin in `requirements/base.in`
+  - Recompiled `requirements/base.txt` and `requirements/development.txt`
+
+  Closes $issue_url
+  ```
+
+---
+
+## Important notes
+
+- The `requirements/base.in` comment format is canonical. Match it exactly, including the `# Security:` prefix.
+- Never remove existing security comments in `requirements/base.in` — only add or update the relevant entry.
+- Do NOT modify any test files.
+- Do NOT change unrelated dependencies.
+- The upper-bound cap in constraints (e.g. `<3.0.0`) prevents accidental major-version upgrades. Always keep it.

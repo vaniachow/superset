@@ -1,0 +1,141 @@
+You are working on the Apache Superset repository ($repo).
+
+## Context
+GitHub issue tracking this work: $issue_url
+
+## Task: Upgrade an npm dependency to fix a security vulnerability
+
+**Package**: `$package_name`
+**Affected version range**: `$installed_version`
+**Target version**: `$fixed_version`
+**CVEs being fixed**: $cve_ids
+**Severity**: $max_severity
+**Summary**: $description
+
+---
+
+## Exact steps to follow
+
+### Step 1 — Clone and check out master
+
+```bash
+git clone https://github.com/$repo.git superset
+cd superset
+git checkout master
+```
+
+### Step 2 — Determine dependency type
+
+```bash
+cd superset-frontend
+node -e "
+const pkg = require('./package.json');
+const deps = {...pkg.dependencies, ...pkg.devDependencies};
+console.log('$package_name' in deps ? 'DIRECT' : 'TRANSITIVE');
+"
+```
+
+### Step 3a — If DIRECT dependency: update `superset-frontend/package.json`
+
+In `superset-frontend/package.json`, find `"$package_name"` in `dependencies` or `devDependencies`.
+Update the version specifier so it requires `>=$fixed_version`.
+
+Example before: `"$package_name": "^4.17.0"`
+Example after:  `"$package_name": ">=$fixed_version"`
+
+### Step 3b — If TRANSITIVE dependency: add to `overrides` in `superset-frontend/package.json`
+
+The `superset-frontend/package.json` already has an `"overrides"` section. Merge a new entry into it:
+
+```json
+"overrides": {
+  "$package_name": ">=$fixed_version"
+}
+```
+
+Rules:
+- Do NOT replace the entire `"overrides"` block. Only add the new key.
+- If `"$package_name"` is already in `"overrides"`, update its version to `>=$fixed_version`.
+- Keep all existing overrides entries unchanged.
+
+### Step 4 — Install and lock
+
+```bash
+cd superset-frontend
+npm install
+```
+
+This regenerates `package-lock.json` with the resolved versions.
+
+### Step 5 — Verify the vulnerability is resolved
+
+```bash
+npm audit --json 2>/dev/null | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+vulns = [v for v in data.get('vulnerabilities', {}).values()
+         if v.get('name') == '$package_name']
+if not vulns:
+    print('FIXED: $package_name vulnerability resolved')
+else:
+    print(f'STILL VULNERABLE: {len(vulns)} findings remain')
+    for v in vulns:
+        print(f'  severity={v[\"severity\"]} range={v[\"range\"]}')
+"
+```
+
+If still vulnerable, try bumping the override version by one patch increment or check
+whether the fix requires a higher version than `$fixed_version`.
+
+### Step 6 — Run the frontend tests
+
+```bash
+cd superset-frontend
+npm run test -- --passWithNoTests --testPathPattern="src" --silent 2>&1 | tail -30
+```
+
+If tests fail due to a genuine breakage from the upgrade, try to fix it.
+If tests fail due to unrelated flakiness, note it in the PR description and proceed.
+
+### Step 7 — Commit and push
+
+```bash
+git config user.email "cve-bot@example.com"
+git config user.name "CVE Remediation Bot"
+git checkout -b fix/cve-npm-$package_name-$fixed_version
+git add superset-frontend/package.json superset-frontend/package-lock.json
+git commit -m "fix(deps): upgrade $package_name to $fixed_version to fix $cve_ids"
+git push -u origin fix/cve-npm-$package_name-$fixed_version
+```
+
+### Step 8 — Open a pull request
+
+Create a PR with:
+- **Title**: `fix(deps): upgrade $package_name to $fixed_version to fix $cve_ids`
+- **Body**:
+  ```
+  ## Summary
+
+  Upgrades npm package `$package_name` to fix:
+
+  - $cve_ids ($max_severity): $description
+
+  ## Changes
+
+  - Updated `superset-frontend/package.json` (direct version or overrides entry)
+  - Regenerated `superset-frontend/package-lock.json`
+
+  Closes $issue_url
+  ```
+
+---
+
+## Important notes
+
+- The `"overrides"` mechanism is npm v7+ and is already in use in this repo — you are
+  extending it, not introducing it.
+- Do NOT modify any test files.
+- Do NOT change unrelated dependencies or overrides.
+- Commit messages follow Conventional Commits format used in this repo: `fix(deps): ...`
+- If `npm audit` reports the vuln still present after override, check that the override
+  key exactly matches the vulnerable package name (case-sensitive).

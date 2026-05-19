@@ -1,0 +1,35 @@
+{
+  "dependencies": [
+    {
+      "name": "urllib3",
+      "version": "2.5.0",
+      "vulns": [
+        {
+          "id": "PYSEC-2026-99",
+          "aliases": ["CVE-2026-21441", "GHSA-xxxx-yyyy-zzzz"],
+          "description": "Decompression bomb bypass on redirects allows resource exhaustion.",
+          "fix_versions": ["2.6.3"],
+          "severity": "HIGH"
+        }
+      ]
+    },
+    {
+      "name": "werkzeug",
+      "version": "3.1.5",
+      "vulns": [
+        {
+          "id": "CVE-2026-27199",
+          "aliases": ["GHSA-aaaa-bbbb-cccc"],
+          "description": "Windows device name handling in safe_join allows path traversal.",
+          "fix_versions": ["3.1.6"],
+          "severity": "MEDIUM"
+        }
+      ]
+    },
+    {
+      "name": "requests",
+      "version": "2.32.0",
+      "vulns": []
+    }
+  ]
+}

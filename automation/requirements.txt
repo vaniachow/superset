@@ -1,0 +1,5 @@
+# Dependencies for the CVE remediation automation pipeline.
+# All other modules use Python stdlib only.
+requests>=2.33.0,<3.0.0
+pip-audit>=2.7.0
+packaging>=24.0

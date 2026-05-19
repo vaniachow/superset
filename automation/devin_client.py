@@ -1,0 +1,146 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from string import Template
+from typing import Optional
+
+import requests
+
+from .models import DevinSession, PackageFinding
+from .utils import with_retries
+
+log = logging.getLogger(__name__)
+
+DEVIN_API = "https://api.devin.ai/v1"
+
+# JSON Schema for structured output returned by Devin sessions
+_STRUCTURED_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "pr_url": {
+            "type": "string",
+            "description": "URL of the pull request created by Devin",
+        },
+        "changes_summary": {
+            "type": "string",
+            "description": "Brief description of the changes made",
+        },
+    },
+}
+
+
+def _headers(api_key: str) -> dict:
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+
+@with_retries(max_attempts=3, base_delay=10)
+def create_session(
+    finding: PackageFinding,
+    issue_url: str,
+    repo: str,
+    devin_api_key: str,
+) -> str:
+    """Start a Devin session to fix a vulnerability. Returns session_id."""
+    prompt = _build_prompt(finding, issue_url, repo)
+    tags = ["cve-remediation", finding.ecosystem, finding.package_name]
+    # Trim tags to 50 chars max and remove duplicates
+    tags = list(dict.fromkeys(t[:50] for t in tags))
+
+    payload = {
+        "prompt": prompt,
+        "title": f"Fix {finding.ecosystem}/{finding.package_name} CVE ({', '.join(finding.all_cve_ids[:2])})",
+        "tags": tags,
+        "idempotent": False,
+        "structured_output_schema": _STRUCTURED_OUTPUT_SCHEMA,
+    }
+
+    resp = requests.post(
+        f"{DEVIN_API}/sessions",
+        headers=_headers(devin_api_key),
+        json=payload,
+        timeout=60,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    session_id: str = data["session_id"]
+    session_url: str = data.get("url", "")
+    log.info(
+        "Started Devin session %s for %s/%s | %s",
+        session_id, finding.ecosystem, finding.package_name, session_url,
+    )
+    return session_id
+
+
+def get_session(session_id: str, devin_api_key: str) -> DevinSession:
+    """Fetch current state of a Devin session."""
+    resp = requests.get(
+        f"{DEVIN_API}/sessions/{session_id}",
+        headers=_headers(devin_api_key),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    pr_url: Optional[str] = None
+    pr_info = data.get("pull_request")
+    if isinstance(pr_info, dict):
+        pr_url = pr_info.get("url")
+
+    # Also check structured_output for pr_url (set when schema is provided)
+    structured = data.get("structured_output") or {}
+    if not pr_url and isinstance(structured, dict):
+        pr_url = structured.get("pr_url")
+
+    return DevinSession(
+        session_id=data["session_id"],
+        status=data.get("status", ""),
+        status_enum=data.get("status_enum", "working"),
+        pull_request_url=pr_url,
+        structured_output=structured or None,
+        updated_at=data.get("updated_at", ""),
+    )
+
+
+# ── Prompt builder ────────────────────────────────────────────────────────────
+
+def _build_prompt(finding: PackageFinding, issue_url: str, repo: str) -> str:
+    prompts_dir = Path(__file__).parent / "prompts"
+    if finding.ecosystem == "pip":
+        template = (prompts_dir / "python_upgrade.txt").read_text(encoding="utf-8")
+    else:
+        template = (prompts_dir / "npm_upgrade.txt").read_text(encoding="utf-8")
+
+    description = finding.records[0].description if finding.records else ""
+    cve_ids = ", ".join(finding.all_cve_ids) if finding.all_cve_ids else "advisory"
+
+    # Use string.Template ($var syntax) so literal braces in code examples
+    # inside the template are never misinterpreted as format placeholders.
+    return Template(template).safe_substitute(
+        package_name=finding.package_name,
+        installed_version=finding.installed_version,
+        fixed_version=finding.fixed_version or "latest",
+        cve_ids=cve_ids,
+        max_severity=finding.max_severity,
+        description=description,
+        issue_url=issue_url,
+        repo=repo,
+    )
