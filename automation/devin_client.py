@@ -58,6 +58,8 @@ def create_session(
         json=payload,
         timeout=60,
     )
+    if not resp.ok:
+        log.error("Devin API error %d: %s", resp.status_code, resp.text[:500])
     resp.raise_for_status()
     data = resp.json()
     session_id: str = data["session_id"]
