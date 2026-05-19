@@ -59,18 +59,20 @@ def poll_sessions(
     github_repo: str,
     github_token: str,
     devin_api_key: str,
+    devin_org_id: str,
     gist_id: Optional[str],
+    gist_token: Optional[str] = None,
 ) -> None:
     """
     Poll all tracked Devin sessions and update GitHub issues with outcomes.
 
-    Session status handling:
-      - finished + PR URL  → comment PR link on issue, close issue
-      - finished + no PR   → comment warning, leave issue open
-      - blocked            → comment blocking message, leave open for human
-      - expired, attempts < MAX_RETRIES → requeue new session, increment attempt count
-      - expired, attempts >= MAX_RETRIES → comment max-retries reached, leave open
-      - working/resumed    → skip (still in progress)
+    Session status handling (Devin API v3 statuses):
+      - exit + PR URL      → comment PR link on issue, leave open for review
+      - exit + no PR       → comment warning, leave issue open
+      - suspended          → comment blocking message, leave open for human
+      - error, attempts < MAX_RETRIES → requeue new session, increment attempt count
+      - error, attempts >= MAX_RETRIES → comment max-retries reached, leave open
+      - new/claimed/running/resuming → skip (still in progress)
     """
     reporter = Reporter()
     findings_by_fp = _rebuild_findings(state)
@@ -97,7 +99,7 @@ def poll_sessions(
             continue
 
         try:
-            session = get_session(session_id, devin_api_key)
+            session = get_session(session_id, devin_api_key, devin_org_id)
         except Exception as exc:
             log.error("Failed to poll session %s: %s", session_id, exc)
             reporter.log_event("session_poll_error", {
@@ -114,7 +116,7 @@ def poll_sessions(
 
         status = session.status_enum
 
-        if status == "finished":
+        if status == "exit":
             pr_url = session.pull_request_url
             if pr_url:
                 comment = (
@@ -147,7 +149,7 @@ def poll_sessions(
                     "issue_number": issue_number,
                 })
 
-        elif status == "blocked":
+        elif status == "suspended":
             comment = (
                 f"Devin session [`{session_id}`](https://app.devin.ai/sessions/{session_id}) "
                 f"is **blocked** and needs human intervention.\n\n"
@@ -161,7 +163,7 @@ def poll_sessions(
                 "issue_number": issue_number,
             })
 
-        elif status == "expired":
+        elif status == "error":
             # Use max attempts across all fingerprints for this session
             attempts = max(
                 (state.session_attempts.get(fp, 1) for fp in fps),
@@ -176,7 +178,7 @@ def poll_sessions(
                     issue_url = f"https://github.com/{github_repo}/issues/{issue_number}"
                     try:
                         new_session_id = devin_create_session(
-                            finding, issue_url, github_repo, devin_api_key
+                            finding, issue_url, github_repo, devin_api_key, devin_org_id
                         )
                         for fp in fps:
                             state.session_map[fp] = new_session_id
@@ -212,8 +214,8 @@ def poll_sessions(
                 })
 
         else:
-            # working, resumed, suspend_requested, etc. — still in progress
+            # new, claimed, running, resuming — still in progress
             log.info("Session %s status=%s — still in progress", session_id, status)
 
-    save_state(state, gist_id, github_token)
+    save_state(state, gist_id, gist_token or github_token)
     reporter.print_summary(state)

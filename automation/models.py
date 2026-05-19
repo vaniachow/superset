@@ -20,9 +20,8 @@ from typing import Literal, Optional
 
 Ecosystem = Literal["pip", "npm"]
 Severity = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
-SessionStatus = Literal["working", "blocked", "expired", "finished",
-                        "suspend_requested", "suspend_requested_frontend",
-                        "resume_requested", "resume_requested_frontend", "resumed"]
+# Devin API v3 session statuses
+SessionStatus = Literal["new", "claimed", "running", "exit", "error", "suspended", "resuming"]
 
 
 @dataclass
@@ -100,7 +99,7 @@ class ScanState:
 
 @dataclass
 class DevinSession:
-    """Snapshot returned by GET /v1/sessions/{session_id}."""
+    """Snapshot returned by GET /v3/organizations/{org_id}/sessions/{session_id}."""
     session_id: str
     status: str
     status_enum: SessionStatus

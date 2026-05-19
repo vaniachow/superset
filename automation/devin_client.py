@@ -27,22 +27,7 @@ from .utils import with_retries
 
 log = logging.getLogger(__name__)
 
-DEVIN_API = "https://api.devin.ai/v1"
-
-# JSON Schema for structured output returned by Devin sessions
-_STRUCTURED_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "pr_url": {
-            "type": "string",
-            "description": "URL of the pull request created by Devin",
-        },
-        "changes_summary": {
-            "type": "string",
-            "description": "Brief description of the changes made",
-        },
-    },
-}
+DEVIN_API = "https://api.devin.ai/v3"
 
 
 def _headers(api_key: str) -> dict:
@@ -58,23 +43,17 @@ def create_session(
     issue_url: str,
     repo: str,
     devin_api_key: str,
+    devin_org_id: str,
 ) -> str:
     """Start a Devin session to fix a vulnerability. Returns session_id."""
     prompt = _build_prompt(finding, issue_url, repo)
-    tags = ["cve-remediation", finding.ecosystem, finding.package_name]
-    # Trim tags to 50 chars max and remove duplicates
-    tags = list(dict.fromkeys(t[:50] for t in tags))
 
     payload = {
         "prompt": prompt,
-        "title": f"Fix {finding.ecosystem}/{finding.package_name} CVE ({', '.join(finding.all_cve_ids[:2])})",
-        "tags": tags,
-        "idempotent": False,
-        "structured_output_schema": _STRUCTURED_OUTPUT_SCHEMA,
     }
 
     resp = requests.post(
-        f"{DEVIN_API}/sessions",
+        f"{DEVIN_API}/organizations/{devin_org_id}/sessions",
         headers=_headers(devin_api_key),
         json=payload,
         timeout=60,
@@ -90,32 +69,30 @@ def create_session(
     return session_id
 
 
-def get_session(session_id: str, devin_api_key: str) -> DevinSession:
+def get_session(session_id: str, devin_api_key: str, devin_org_id: str) -> DevinSession:
     """Fetch current state of a Devin session."""
     resp = requests.get(
-        f"{DEVIN_API}/sessions/{session_id}",
+        f"{DEVIN_API}/organizations/{devin_org_id}/sessions/{session_id}",
         headers=_headers(devin_api_key),
         timeout=30,
     )
     resp.raise_for_status()
     data = resp.json()
 
+    # v3 returns pull_requests as an array of {pr_url, pr_state} objects
     pr_url: Optional[str] = None
-    pr_info = data.get("pull_request")
-    if isinstance(pr_info, dict):
-        pr_url = pr_info.get("url")
+    pull_requests = data.get("pull_requests") or []
+    if isinstance(pull_requests, list) and pull_requests:
+        pr_url = pull_requests[0].get("pr_url") or pull_requests[0].get("url")
 
-    # Also check structured_output for pr_url (set when schema is provided)
-    structured = data.get("structured_output") or {}
-    if not pr_url and isinstance(structured, dict):
-        pr_url = structured.get("pr_url")
+    status: str = data.get("status", "running")
 
     return DevinSession(
         session_id=data["session_id"],
-        status=data.get("status", ""),
-        status_enum=data.get("status_enum", "working"),
+        status=status,
+        status_enum=status,  # type: ignore[arg-type]
         pull_request_url=pr_url,
-        structured_output=structured or None,
+        structured_output=None,
         updated_at=data.get("updated_at", ""),
     )
 

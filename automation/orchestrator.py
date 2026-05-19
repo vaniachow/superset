@@ -35,7 +35,9 @@ def run_pipeline(
     github_repo: str,
     github_token: str,
     devin_api_key: Optional[str],
+    devin_org_id: Optional[str],
     gist_id: Optional[str],
+    gist_token: Optional[str] = None,
     dry_run: bool = False,
 ) -> ScanState:
     """
@@ -50,7 +52,7 @@ def run_pipeline(
     reporter = Reporter()
 
     # ── 1. Load state ─────────────────────────────────────────────────────────
-    state = load_state(gist_id, github_token)
+    state = load_state(gist_id, gist_token or github_token)
     reporter.log_event("state_loaded", {
         "previous_fingerprints": len(state.fingerprints),
         "open_sessions": len(state.session_map),
@@ -90,7 +92,7 @@ def run_pipeline(
         log.info("No new CVE findings. Nothing to do.")
         state.scan_timestamp = datetime.now(timezone.utc).isoformat()
         if not dry_run:
-            save_state(state, gist_id, github_token)
+            save_state(state, gist_id, gist_token or github_token)
         reporter.print_summary(state)
         return state
 
@@ -152,9 +154,9 @@ def run_pipeline(
             continue
 
         # Start Devin session
-        if devin_api_key:
+        if devin_api_key and devin_org_id:
             try:
-                session_id = create_session(finding, issue_url, github_repo, devin_api_key)
+                session_id = create_session(finding, issue_url, github_repo, devin_api_key, devin_org_id)
                 for fp in fps:
                     state.session_map[fp] = session_id
                     state.session_attempts[fp] = state.session_attempts.get(fp, 0) + 1
@@ -188,7 +190,7 @@ def run_pipeline(
                 })
         else:
             log.warning(
-                "DEVIN_API_KEY not set — skipping session for %s/%s",
+                "DEVIN_API_KEY or DEVIN_ORG_ID not set — skipping session for %s/%s",
                 finding.ecosystem, finding.package_name,
             )
 
@@ -200,7 +202,7 @@ def run_pipeline(
     state.scan_timestamp = datetime.now(timezone.utc).isoformat()
 
     if not dry_run:
-        save_state(state, gist_id, github_token)
+        save_state(state, gist_id, gist_token or github_token)
 
     # ── 6. Summary ────────────────────────────────────────────────────────────
     reporter.print_summary(state)

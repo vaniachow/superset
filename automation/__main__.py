@@ -24,8 +24,11 @@ Usage:
 Environment variables:
   GITHUB_TOKEN        (required) GitHub token with issues:write permission
   GITHUB_REPOSITORY   Repository in "owner/repo" format (default: apache/superset)
-  DEVIN_API_KEY       Devin API key — if absent, sessions are not started
+  DEVIN_API_KEY       Devin service user API key (cog_ prefix) — if absent, sessions are not started
+  DEVIN_ORG_ID        Devin organization ID — required to use the v3 API with DEVIN_API_KEY
   SCAN_STATE_GIST_ID  Secret GitHub Gist ID for cross-run state persistence
+  GH_PAT              (optional) GitHub PAT with gist scope for Gist state persistence;
+                      falls back to GITHUB_TOKEN (which may lack gist scope in Actions)
 """
 
 from __future__ import annotations
@@ -75,7 +78,10 @@ def main() -> None:
     github_token = _require_env("GITHUB_TOKEN")
     github_repo = os.environ.get("GITHUB_REPOSITORY", "apache/superset").strip()
     devin_api_key = os.environ.get("DEVIN_API_KEY", "").strip() or None
+    devin_org_id = os.environ.get("DEVIN_ORG_ID", "").strip() or None
     gist_id = os.environ.get("SCAN_STATE_GIST_ID", "").strip() or None
+    # GH_PAT should be a PAT with gist scope. GITHUB_TOKEN in Actions lacks that scope.
+    gist_token = os.environ.get("GH_PAT", "").strip() or github_token
 
     if args.command == "scan":
         from .orchestrator import run_pipeline
@@ -84,7 +90,9 @@ def main() -> None:
             github_repo=github_repo,
             github_token=github_token,
             devin_api_key=devin_api_key,
+            devin_org_id=devin_org_id,
             gist_id=gist_id,
+            gist_token=gist_token,
             dry_run=args.dry_run,
         )
 
@@ -92,17 +100,20 @@ def main() -> None:
         if not devin_api_key:
             print("ERROR: DEVIN_API_KEY is required for the monitor command", file=sys.stderr)
             sys.exit(1)
+        if not devin_org_id:
+            print("ERROR: DEVIN_ORG_ID is required for the monitor command", file=sys.stderr)
+            sys.exit(1)
         from .state_manager import load_state
         from .monitor import poll_sessions
-        state = load_state(gist_id, github_token)
-        # findings_by_fp is empty here; requeue will be a no-op if finding isn't cached.
-        # In a future iteration this could be populated from a serialized findings store.
+        state = load_state(gist_id, gist_token)
         poll_sessions(
             state=state,
             github_repo=github_repo,
             github_token=github_token,
             devin_api_key=devin_api_key,
+            devin_org_id=devin_org_id,
             gist_id=gist_id,
+            gist_token=gist_token,
         )
 
 

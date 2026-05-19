@@ -71,12 +71,13 @@ class TestCreateSession:
                 _make_pip_finding(),
                 "https://github.com/apache/superset/issues/1",
                 "apache/superset",
-                "apk_test_key",
+                "cog_test_key",
+                "org_test123",
             )
 
         assert session_id == "ses_abc123"
 
-    def test_includes_cve_remediation_tag(self):
+    def test_uses_v3_org_endpoint(self):
         from automation.devin_client import create_session
 
         mock_resp = MagicMock()
@@ -87,15 +88,14 @@ class TestCreateSession:
                 _make_pip_finding(),
                 "https://github.com/apache/superset/issues/1",
                 "apache/superset",
-                "apk_test_key",
+                "cog_test_key",
+                "org_abc",
             )
 
-        payload = mock_post.call_args[1]["json"]
-        assert "cve-remediation" in payload["tags"]
-        assert "pip" in payload["tags"]
-        assert "urllib3" in payload["tags"]
+        url = mock_post.call_args[0][0]
+        assert "/v3/organizations/org_abc/sessions" in url
 
-    def test_includes_structured_output_schema(self):
+    def test_prompt_included_in_payload(self):
         from automation.devin_client import create_session
 
         mock_resp = MagicMock()
@@ -106,12 +106,13 @@ class TestCreateSession:
                 _make_pip_finding(),
                 "https://github.com/apache/superset/issues/1",
                 "apache/superset",
-                "apk_test_key",
+                "cog_test_key",
+                "org_abc",
             )
 
         payload = mock_post.call_args[1]["json"]
-        assert "structured_output_schema" in payload
-        assert "pr_url" in payload["structured_output_schema"]["properties"]
+        assert "prompt" in payload
+        assert "urllib3" in payload["prompt"]
 
 
 class TestBuildPrompt:
@@ -159,39 +160,38 @@ class TestBuildPrompt:
 
 
 class TestGetSession:
-    def test_parses_finished_with_pr(self):
+    def test_parses_exit_with_pr(self):
+        """v3: status='exit', pull_requests is an array of {pr_url, pr_state}."""
         from automation.devin_client import get_session
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "session_id": "ses_abc",
-            "status": "Session complete",
-            "status_enum": "finished",
-            "pull_request": {"url": "https://github.com/apache/superset/pull/999"},
-            "structured_output": None,
+            "status": "exit",
+            "pull_requests": [{"pr_url": "https://github.com/apache/superset/pull/999", "pr_state": "open"}],
             "updated_at": "2026-05-18T12:00:00Z",
         }
 
         with patch("requests.get", return_value=mock_resp):
-            session = get_session("ses_abc", "apk_key")
+            session = get_session("ses_abc", "cog_key", "org_abc")
 
-        assert session.status_enum == "finished"
+        assert session.status_enum == "exit"
         assert session.pull_request_url == "https://github.com/apache/superset/pull/999"
 
-    def test_parses_pr_from_structured_output(self):
+    def test_parses_running_with_no_pr(self):
+        """v3: status='running', empty pull_requests list."""
         from automation.devin_client import get_session
 
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "session_id": "ses_abc",
-            "status": "done",
-            "status_enum": "finished",
-            "pull_request": None,
-            "structured_output": {"pr_url": "https://github.com/apache/superset/pull/888"},
+            "status": "running",
+            "pull_requests": [],
             "updated_at": "2026-05-18T12:00:00Z",
         }
 
         with patch("requests.get", return_value=mock_resp):
-            session = get_session("ses_abc", "apk_key")
+            session = get_session("ses_abc", "cog_key", "org_abc")
 
-        assert session.pull_request_url == "https://github.com/apache/superset/pull/888"
+        assert session.status_enum == "running"
+        assert session.pull_request_url is None
