@@ -213,8 +213,10 @@ mako==1.3.11
     #   -r requirements/base.in
     #   apache-superset (pyproject.toml)
     #   alembic
-markdown==3.8.1
-    # via apache-superset (pyproject.toml)
+markdown==3.10.2
+    # via
+    #   -r requirements/base.in
+    #   apache-superset (pyproject.toml)
 markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
