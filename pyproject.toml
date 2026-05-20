@@ -448,6 +448,7 @@ authorized_licenses = [
     "any-osi",
     "apache license 2.0",
     "apache software",
+    "apache-2.0",
     "apache software, bsd",
     "bsd",
     "bsd-2-clause",
