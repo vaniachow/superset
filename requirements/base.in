@@ -39,6 +39,8 @@ requests>=2.33.0,<3.0.0
 flask>=3.1.3
 # flask-babel 3.x is incompatible with Flask 3.x (imports removed locked_cached_property)
 flask-babel>=4.0.0,<5.0.0
+# flask-sqlalchemy 2.x is incompatible with Flask 3.x (imports removed _app_ctx_stack)
+flask-sqlalchemy>=3.0.0,<4.0.0
 
 # 5.0.0 has a sensitive deprecation used in other libs
 # -> https://github.com/aio-libs/async-timeout/blob/master/CHANGES.rst#500-2024-10-31
