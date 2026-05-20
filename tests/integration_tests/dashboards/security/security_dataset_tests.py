@@ -20,8 +20,8 @@ import pytest
 import rison
 from flask import (
     current_app,
-    escape,  # noqa: F401
 )
+from markupsafe import escape  # noqa: F401
 
 from superset.daos.dashboard import DashboardDAO
 from superset.utils import json
