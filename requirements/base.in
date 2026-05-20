@@ -16,6 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+# Security: CVE-2024-1681 (UNKNOWN) - corydolphin/flask-cors is vulnerable to log injection when the log level is set to debug. An attacker can inject fake log entries into the log file by sending a specially crafted GET request containing a CRLF sequence in the request path. This vulnerability allows attackers to corrupt log files, potentially covering tracks of other attacks, confusing log post-processing tools, and forging log entries. The issue is due to improper output neutralization for logs.
+flask-cors>=6.0.2,<7.0
 # Security: CVE-2026-21441 - decompression bomb bypass on redirects
 urllib3>=2.6.3,<3.0.0
 # Security: CVE-2026-27199 - Windows device name handling in safe_join
