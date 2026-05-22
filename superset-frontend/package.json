@@ -412,7 +412,8 @@
     "@luma.gl/gltf": "~9.2.5",
     "@luma.gl/shadertools": "~9.2.5",
     "@luma.gl/webgl": "~9.2.5",
-    "fast-xml-parser": "^5.8.0"
+    "fast-xml-parser": "^5.8.0",
+    "uuid": "$uuid"
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {
