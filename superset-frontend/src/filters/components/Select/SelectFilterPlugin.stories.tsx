@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { action } from '@storybook/addon-actions';
+import { fn } from '@storybook/test';
 import { SuperChart, getChartTransformPropsRegistry } from '@superset-ui/core';
 import { mockQueryDataForCountries } from 'spec/fixtures/mockNativeFilters';
 import SelectFilterPlugin from './index';
@@ -65,7 +65,7 @@ export const Select = ({
       metrics: ['SUM(SP_POP_TOTL)'],
     }}
     hooks={{
-      setDataMask: action('setDataMask'),
+      setDataMask: fn(),
     }}
   />
 );
