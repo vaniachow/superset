@@ -77,10 +77,7 @@ export const CacheAges: StoryFn = () => {
           style={{ display: 'flex', alignItems: 'center', gap: 16 }}
         >
           <span style={{ width: 120, color: '#666' }}>{label}:</span>
-          <CachedLabel
-            cachedTimestamp={timestamp}
-            onClick={fn()}
-          />
+          <CachedLabel cachedTimestamp={timestamp} onClick={fn()} />
         </div>
       ))}
       <p style={{ marginTop: 16, color: '#888', fontSize: 12 }}>
