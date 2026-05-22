@@ -259,7 +259,7 @@
     "@babel/types": "^7.28.6",
     "@emotion/babel-plugin": "^11.13.5",
     "@emotion/jest": "^11.14.2",
-    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@istanbuljs/nyc-config-typescript": "1.0.0",
     "@mihkeleidast/storybook-addon-source": "^1.0.1",
     "@playwright/test": "^1.60.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
