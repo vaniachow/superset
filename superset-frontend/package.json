@@ -273,7 +273,7 @@
     "@storybook/react": "^8.6.18",
     "@storybook/react-webpack5": "^8.6.18",
     "@storybook/test": "^8.6.18",
-    "@storybook/test-runner": "^0.24.4",
+    "@storybook/test-runner": "^0.17.0",
     "@svgr/webpack": "^8.1.0",
     "@swc/core": "^1.15.33",
     "@swc/plugin-emotion": "^14.9.0",
@@ -412,7 +412,8 @@
     "@luma.gl/gltf": "~9.2.5",
     "@luma.gl/shadertools": "~9.2.5",
     "@luma.gl/webgl": "~9.2.5",
-    "fast-xml-parser": "^5.8.0"
+    "fast-xml-parser": "^5.8.0",
+    "uuid": "$uuid"
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {
