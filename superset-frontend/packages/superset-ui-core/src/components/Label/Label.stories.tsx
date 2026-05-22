@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { action } from '@storybook/addon-actions';
+import { fn } from '@storybook/test';
 import { Meta, StoryFn } from '@storybook/react';
 import type { LabelType } from './types';
 import { Label, DatasetTypeLabel, PublishedLabel } from '.';
@@ -48,7 +48,7 @@ interface LabelGalleryProps {
 export const LabelGallery: StoryFn<LabelGalleryProps> = (
   props: LabelGalleryProps,
 ) => {
-  const onClick = props.hasOnClick ? action('clicked') : undefined;
+  const onClick = props.hasOnClick ? fn() : undefined;
 
   return (
     <>

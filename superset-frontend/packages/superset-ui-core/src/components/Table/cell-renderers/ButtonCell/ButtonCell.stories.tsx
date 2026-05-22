@@ -17,7 +17,7 @@
  * under the License.
  */
 import { StoryFn, Meta } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { fn } from '@storybook/test';
 import { ButtonCell } from './index';
 
 export default {
@@ -25,7 +25,7 @@ export default {
   component: ButtonCell,
 } as Meta<typeof ButtonCell>;
 
-const clickHandler = action('button cell onClick');
+const clickHandler = fn();
 
 export const Basic: StoryFn<typeof ButtonCell> = args => (
   <ButtonCell {...args} />

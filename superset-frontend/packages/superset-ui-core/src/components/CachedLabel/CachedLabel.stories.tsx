@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { action } from '@storybook/addon-actions';
+import { fn } from '@storybook/test';
 import { Meta, StoryFn } from '@storybook/react';
 import { CachedLabel } from '.';
 import type { CacheLabelProps } from './types';
@@ -35,7 +35,7 @@ export const InteractiveCachedLabel: StoryFn<CacheLabelProps> = args => (
 
 InteractiveCachedLabel.args = {
   cachedTimestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-  onClick: action('refresh-clicked'),
+  onClick: fn(),
 };
 
 InteractiveCachedLabel.argTypes = {
@@ -77,10 +77,7 @@ export const CacheAges: StoryFn = () => {
           style={{ display: 'flex', alignItems: 'center', gap: 16 }}
         >
           <span style={{ width: 120, color: '#666' }}>{label}:</span>
-          <CachedLabel
-            cachedTimestamp={timestamp}
-            onClick={action('refresh-clicked')}
-          />
+          <CachedLabel cachedTimestamp={timestamp} onClick={fn()} />
         </div>
       ))}
       <p style={{ marginTop: 16, color: '#888', fontSize: 12 }}>

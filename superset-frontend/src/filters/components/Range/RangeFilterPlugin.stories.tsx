@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { action } from '@storybook/addon-actions';
+import { fn } from '@storybook/test';
 import { SuperChart, getChartTransformPropsRegistry } from '@superset-ui/core';
 import { GenericDataType } from '@apache-superset/core/common';
 import RangeFilterPlugin from './index';
@@ -68,7 +68,7 @@ export const range = ({ width, height }: { width: number; height: number }) => (
       ],
     }}
     hooks={{
-      setDataMask: action('setDataMask'),
+      setDataMask: fn(),
     }}
   />
 );

@@ -19,7 +19,7 @@
 import { useState, DragEvent } from 'react';
 
 import type { Meta, StoryFn } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { fn } from '@storybook/test';
 import {
   ColumnsType,
   ETableAction,
@@ -438,7 +438,7 @@ const rendererColumns: ColumnsType<RendererData> = [
         label={text}
         row={data}
         index={index}
-        onClick={action('button-cell-click')}
+        onClick={fn()}
       />
     ),
   },
@@ -524,17 +524,11 @@ export const Basic = (args: TableProps<object>) => <Table {...args} />;
 
 function handlers(record: object, rowIndex: number) {
   return {
-    onClick: action(
-      `row onClick, row: ${rowIndex}, record: ${JSON.stringify(record)}`,
-    ), // click row
-    onDoubleClick: action(
-      `row onDoubleClick, row: ${rowIndex}, record: ${JSON.stringify(record)}`,
-    ), // double click row
-    onContextMenu: action(
-      `row onContextMenu, row: ${rowIndex}, record: ${JSON.stringify(record)}`,
-    ), // right button click row
-    onMouseEnter: action(`Mouse Enter, row: ${rowIndex}`), // mouse enter row
-    onMouseLeave: action(`Mouse Leave, row: ${rowIndex}`), // mouse leave row
+    onClick: fn(), // click row
+    onDoubleClick: fn(), // double click row
+    onContextMenu: fn(), // right button click row
+    onMouseEnter: fn(), // mouse enter row
+    onMouseLeave: fn(), // mouse leave row
   };
 }
 
@@ -641,15 +635,15 @@ export const ServerPagination = (args: TableProps<any>) => {
         break;
       }
       case ETableAction.Sort: {
-        action(`table-sort-change: ${JSON.stringify(sorter)}`);
+        fn();
         break;
       }
       case ETableAction.Filter: {
-        action(`table-sort-change: ${JSON.stringify(filters)}`);
+        fn();
         break;
       }
       default: {
-        action('table action unknown');
+        fn();
         break;
       }
     }
