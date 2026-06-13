@@ -9,6 +9,7 @@
 .eslintignore
 .flake8
 .nvmrc
+.npmrc
 .prettierrc
 .rat-excludes
 .swcrc
