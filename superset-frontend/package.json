@@ -270,7 +270,7 @@
     "@storybook/addon-mdx-gfm": "^8.6.18",
     "@storybook/components": "^8.6.18",
     "@storybook/preview-api": "^8.6.18",
-    "@storybook/react": "^8.6.18",
+    "@storybook/react": ">=10.4.4",
     "@storybook/react-webpack5": "^8.6.18",
     "@storybook/test": "^8.6.18",
     "@storybook/test-runner": "^0.17.0",
@@ -412,7 +412,8 @@
     "@luma.gl/gltf": "~9.2.5",
     "@luma.gl/shadertools": "~9.2.5",
     "@luma.gl/webgl": "~9.2.5",
-    "fast-xml-parser": "^5.8.0"
+    "fast-xml-parser": "^5.8.0",
+    "@storybook/react": ">=10.4.4"
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {
