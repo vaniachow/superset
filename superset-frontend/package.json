@@ -263,6 +263,7 @@
     "@mihkeleidast/storybook-addon-source": "^1.0.1",
     "@playwright/test": "^1.60.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
+    "@react-spring/web": "^9.7.5",
     "@storybook/addon-actions": "^8.6.18",
     "@storybook/addon-controls": "^8.6.18",
     "@storybook/addon-essentials": "^8.6.18",
