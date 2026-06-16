@@ -62,8 +62,6 @@ backoff==2.2.1
     # via
     #   -c requirements/base-constraint.txt
     #   apache-superset
-backports-tarfile==1.2.0
-    # via jaraco-context
 bcrypt==4.3.0
     # via
     #   -c requirements/base-constraint.txt
@@ -178,7 +176,7 @@ croniter==6.0.0
     # via
     #   -c requirements/base-constraint.txt
     #   apache-superset
-cryptography==46.0.7
+cryptography==48.0.1
     # via
     #   -c requirements/base-constraint.txt
     #   apache-superset
@@ -431,9 +429,7 @@ idna==3.10
     #   trio
     #   url-normalize
 importlib-metadata==8.7.0
-    # via
-    #   keyring
-    #   opentelemetry-api
+    # via opentelemetry-api
 importlib-resources==6.5.2
     # via prophet
 iniconfig==2.0.0
@@ -781,7 +777,7 @@ pynacl==1.6.2
     # via
     #   -c requirements/base-constraint.txt
     #   paramiko
-pyopenssl==26.0.0
+pyopenssl==26.2.0
     # via
     #   -c requirements/base-constraint.txt
     #   shillelagh
