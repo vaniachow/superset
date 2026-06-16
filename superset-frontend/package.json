@@ -365,7 +365,7 @@
     "style-loader": "^4.0.0",
     "swc-loader": "^0.2.7",
     "terser-webpack-plugin": "^5.6.0",
-    "ts-jest": "^29.4.9",
+    "ts-jest": ">=27.0.3",
     "tscw-config": "^1.1.2",
     "tsx": "^4.22.0",
     "typescript": "5.4.5",
@@ -412,7 +412,10 @@
     "@luma.gl/gltf": "~9.2.5",
     "@luma.gl/shadertools": "~9.2.5",
     "@luma.gl/webgl": "~9.2.5",
-    "fast-xml-parser": "^5.8.0"
+    "fast-xml-parser": "^5.8.0",
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": ">=4.2.0"
+    }
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {
