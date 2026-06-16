@@ -413,7 +413,10 @@
     "@luma.gl/shadertools": "~9.2.5",
     "@luma.gl/webgl": "~9.2.5",
     "fast-xml-parser": "^5.8.0",
-    "js-yaml": ">=4.2.0"
+    "js-yaml": ">=4.2.0",
+    "js-yaml-loader": {
+      "js-yaml": "^3.14.1"
+    }
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {
