@@ -346,7 +346,7 @@
     "jest-websocket-mock": "^2.5.0",
     "js-yaml-loader": "^1.2.2",
     "jsdom": "^29.1.1",
-    "lerna": "^9.0.4",
+    "lerna": ">=6.6.2",
     "lightningcss": "^1.32.0",
     "mini-css-extract-plugin": "^2.10.2",
     "open-cli": "^9.0.0",
@@ -412,7 +412,11 @@
     "@luma.gl/gltf": "~9.2.5",
     "@luma.gl/shadertools": "~9.2.5",
     "@luma.gl/webgl": "~9.2.5",
-    "fast-xml-parser": "^5.8.0"
+    "fast-xml-parser": "^5.8.0",
+    "lerna": {
+      "js-yaml": ">=4.1.2",
+      "tar": ">=7.5.16"
+    }
   },
   "readme": "ERROR: No README data found!",
   "scarfSettings": {
