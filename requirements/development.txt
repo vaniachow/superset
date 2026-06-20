@@ -421,7 +421,7 @@ humanize==4.12.3
     #   apache-superset
 identify==2.5.36
     # via pre-commit
-idna==3.10
+idna==3.15
     # via
     #   -c requirements/base-constraint.txt
     #   anyio
